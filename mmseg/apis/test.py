@@ -106,6 +106,10 @@ def single_gpu_our(model,
         with torch.no_grad():
             result, probs, preds = ema_model(return_loss=False, **data)
             _, probs_, _ = anchor_model(return_loss=False, **data)
+            uncertainty=0
+            for i in range(14):
+                uncertainty+=(probs_[i][0]-probs_[4][0])*(probs_[i][0]-probs_[4][0])
+            uncertainty/=14
             mask = (probs_[4][0] > 0.69).astype(np.int64) # 0.74 was the 5% quantile for cityscapes, therefore we use 0.69 here
             result = [(mask*preds[4][0] + (1.-mask)*result[0]).astype(np.int64)]
             weight = 1.
@@ -140,6 +144,8 @@ def single_gpu_our(model,
                 img_id = 0
             loss = model.forward(return_loss=True, img=data['img'][img_id], img_metas=data['img_metas']
                                  [img_id].data[0], gt_semantic_seg=torch.from_numpy(result[0]).cuda().unsqueeze(0).unsqueeze(0))
+
+            # confidence
             mask = (probs_[4][0] <0.67).astype(np.int64)
             mask=torch.from_numpy(mask).cuda()
             masked_loss=mask*loss["decode.loss_seg"][0]
@@ -147,6 +153,15 @@ def single_gpu_our(model,
             mask2 = (probs_[4][0] >0.95).astype(np.int64)
             mask2=torch.from_numpy(mask2).cuda()
             masked_loss2=mask2*loss["decode.loss_seg"][0]
+            # uncertainty
+            mask = (uncertainty <0.25).astype(np.int64)
+            mask=torch.from_numpy(mask).cuda()
+            masked_loss=mask*loss["decode.loss_seg"][0]
+
+            mask2 = (uncertainty >0.6).astype(np.int64)
+            mask2=torch.from_numpy(mask2).cuda()
+            masked_loss2=mask2*loss["decode.loss_seg"][0]
+
             if efficient_test:
                 result = [np2tmp(_) for _ in result]
             results.extend(result)
