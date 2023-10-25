@@ -1,4 +1,4 @@
-# Cityscapes to ACDC
+# DAT: Distribution Aware Tuning
 ## environment setup
 ```
 conda env create -f environment_segformer.yaml
@@ -9,8 +9,8 @@ conda activate segformer
 ```
 bash run_base.sh
 bash run_tent.sh
-bash run_cotta.sh
-# Example rerun logs are included in ./example_logs/base.log, tent.log, and cotta.log.
+bash run_dat.sh
+# Logs of DAT model on Cityscapes_to_ACDC and SHIFT datasets can be found in ./results_logs/
 ```
 
 ## License
